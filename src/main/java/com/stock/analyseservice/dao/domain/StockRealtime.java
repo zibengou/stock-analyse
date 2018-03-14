@@ -26,7 +26,7 @@ public class StockRealtime {
 
     public StockRealtime(String code, String[] values) {
         this.stockCode = code;
-        this.stockName = values[0];
+//        this.stockName = values[0];
         this.start = Float.valueOf(values[1]);
         this.lastStart = Float.valueOf(values[2]);
         this.now = Float.valueOf(values[3]);

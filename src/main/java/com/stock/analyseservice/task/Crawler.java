@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.nio.channels.CompletionHandler;
@@ -145,7 +146,7 @@ public class Crawler {
     /***
      * 每十分钟获取一次实时数据
      */
-//    @Scheduled()
+    @Scheduled(cron = "0 0/1 9,10,11,13,14,21 ? * MON-FRI")
     public void StockRealTimeData() {
         String url = "http://hq.sinajs.cn/list=";
         List<String> codeList = new ArrayList<>();
@@ -159,6 +160,7 @@ public class Crawler {
         }
         String request = url + StringUtils.join(codeList, ",");
         getRealTimeData(request);
+        logger.info("init all realtime data success");
     }
 
     private void getRealTimeData(String url) {
@@ -173,10 +175,13 @@ public class Crawler {
                         String[] values = valueStrings[1].split(",");
                         if (values.length > 32) {
                             StockRealtime realtime = new StockRealtime(code, values);
-                            realtimeRepository.save(realtime);
+                            if (null == realtimeRepository.findByStockCodeAndTime(realtime.getStockCode(), realtime.getTime())) {
+                                realtimeRepository.save(realtime);
+                            }
                         }
                     }
                 }
+                logger.info("init code:{} success...", url);
             }
 
             @Override
