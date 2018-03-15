@@ -149,9 +149,9 @@ public class Crawler {
     }
 
     /***
-     * 每十分钟获取一次实时数据
+     * 每分钟获取一次实时数据
      */
-    @Scheduled(cron = "0 0/1 9,10,11,13,14,21 ? * MON-FRI")
+    @Scheduled(cron = "0 0/1 9,10,11,13,14 ? * MON-FRI")
     public void StockRealTimeData() {
         String url = "http://hq.sinajs.cn/list=";
         List<String> codeList = new ArrayList<>();

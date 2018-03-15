@@ -13,6 +13,8 @@ import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.Updater;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
+import org.deeplearning4j.nn.conf.layers.FeedForwardLayer;
+import org.deeplearning4j.nn.conf.layers.LSTM;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
@@ -119,7 +121,7 @@ public class RegressionStock {
         }
     }
 
-    public void train(File trainFile, List<Pair<Integer, String>> hiddens, Float learningRate, Integer nEpochs, Integer dayNum, List<String> inputs, List<String> outputs, Boolean update, Boolean isClassify) {
+    public void train(File trainFile, List<Pair<Integer, String>> hiddens, Float learningRate, Integer nEpochs, Integer dayNum, List<String> inputs, List<String> outputs, Boolean update, Boolean isClassify, String netType) {
         try {
             List<String> columns = new ArrayList<>();
             for (int i = 0; i < dayNum; i++) {
@@ -138,13 +140,13 @@ public class RegressionStock {
                 log.info("net model:{} already exists ", model.getPath());
                 return;
             }
-            train(readTrainData(trainFile, columns), hiddens, learningRate, nEpochs, outputs, model, isClassify);
+            train(readTrainData(trainFile, columns), hiddens, learningRate, nEpochs, outputs, model, isClassify, netType);
         } catch (IOException e) {
             log.error("init train data error:{}", trainFile.getPath());
         }
     }
 
-    private void train(List<Map<String, Float>> data, List<Pair<Integer, String>> hiddens, Float learningRate, Integer nEpochs, List<String> outputs, File model, Boolean isClassify) {
+    private void train(List<Map<String, Float>> data, List<Pair<Integer, String>> hiddens, Float learningRate, Integer nEpochs, List<String> outputs, File model, Boolean isClassify, String netType) {
         List<DataSetIterator> iterators = null;
         try {
             iterators = getTrainingData(data, outputs, isClassify);
@@ -162,40 +164,15 @@ public class RegressionStock {
 //                .weightInit(WeightInit.XAVIER)
                 .updater(Updater.NESTEROVS)     //To configure: .updater(new Nesterovs(0.9))
                 .list()
-                .layer(0, new DenseLayer.Builder().nIn(numInputs).nOut(hiddens.get(0).getKey())
-                        .weightInit(WeightInit.XAVIER)
-                        .activation(Activation.fromString(hiddens.get(0).getValue()))
-                        .build());
+                .layer(0, parseNet(netType, numInputs, hiddens.get(0).getKey(), hiddens.get(0).getValue()));
         for (int i = 1; i < hiddens.size(); i++) {
-            builder.layer(i, new DenseLayer.Builder().nIn(hiddens.get(i - 1).getKey()).nOut(hiddens.get(i).getKey())
-                    .weightInit(WeightInit.XAVIER)
-                    .activation(Activation.fromString(hiddens.get(i).getValue()))
-                    .build());
+            builder.layer(i, parseNet(netType, hiddens.get(i - 1).getKey(), hiddens.get(i).getKey(), hiddens.get(i).getValue()));
         }
         builder.layer(hiddens.size(), new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
                 .weightInit(WeightInit.XAVIER)
                 .activation(Activation.SOFTMAX).weightInit(WeightInit.XAVIER)
                 .nIn(hiddens.get(hiddens.size() - 1).getKey()).nOut(isClassify ? outputs.size() * 2 : outputs.size()).build());
         MultiLayerConfiguration conf = builder.pretrain(false).backprop(true).build();
-
-//        MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
-//                .seed(seed)
-//                .iterations(1)
-//                .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-//                .learningRate(learningRate)
-//                .updater(Updater.NESTEROVS)     //To configure: .updater(new Nesterovs(0.9))
-//                .list()
-//                .layer(0, new DenseLayer.Builder().nIn(numInputs).nOut(hiddens.get(0).getKey())
-//                        .weightInit(WeightInit.XAVIER)
-//                        .activation(Activation.RELU)
-//                        .build())
-//                .layer(1, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
-//                        .weightInit(WeightInit.XAVIER)
-//                        .activation(Activation.SOFTMAX).weightInit(WeightInit.XAVIER)
-//                        .nIn(hiddens.get(0).getKey()).nOut(5).build())
-//                .pretrain(false).backprop(true).build();
-
-
         MultiLayerNetwork net = new MultiLayerNetwork(conf);
         net.init();
         net.setListeners(new ScoreIterationListener(1000));
@@ -229,6 +206,22 @@ public class RegressionStock {
             log.info("save net model data success:{}", model.getPath());
         } catch (IOException e) {
             log.error("save net model data error:{}", e.getMessage());
+        }
+    }
+
+    private FeedForwardLayer parseNet(String netType, int inNums, int outNum, String activation) {
+        switch (netType.toLowerCase()) {
+            case "lstm":
+                return new LSTM.Builder().nIn(inNums).nOut(outNum)
+                        .weightInit(WeightInit.XAVIER)
+                        .activation(Activation.fromString(activation))
+                        .build();
+            default:
+                return new DenseLayer.Builder().nIn(inNums).nOut(outNum)
+                        .weightInit(WeightInit.XAVIER)
+                        .activation(Activation.fromString(activation))
+                        .build();
+
         }
     }
 

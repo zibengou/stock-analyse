@@ -67,6 +67,7 @@ public class TrainController {
                                             @RequestParam(defaultValue = "10") Integer dayNum,
                                             @RequestParam(defaultValue = "200") int nEpochs,
                                             @RequestParam(defaultValue = "1") int seed,
+                                            @RequestParam(defaultValue = "default") String netTyle,
                                             @RequestParam(defaultValue = "0.005") Float learningRate) throws InterruptedException {
         Date st = Timestamp.valueOf(LocalDate.parse(start).atStartOfDay());
         Date et = Timestamp.valueOf(LocalDate.parse(end).atStartOfDay());
@@ -111,7 +112,7 @@ public class TrainController {
             }
         }
         regressionStock.setSeed(seed);
-        Thread regressionThread = new Thread(() -> regressionStock.train(trainFile, hiddens, learningRate, nEpochs, dayNum, columns, out, modelUpdate, isClassify));
+        Thread regressionThread = new Thread(() -> regressionStock.train(trainFile, hiddens, learningRate, nEpochs, dayNum, columns, out, modelUpdate, isClassify, netTyle));
         regressionThread.start();
         return regressionThread.getId();
     }
