@@ -41,17 +41,17 @@ public class TrainController {
 
     CommentClassifier commentClassifier = CommentClassifier.newInstance();
 
-    @RequestMapping(value = "/comment", method = RequestMethod.GET)
-    public void trainStockComment() {
-        trainer.CommentTrainer();
-    }
-
-    @RequestMapping(value = "/history", method = RequestMethod.GET)
-    public void trainStockHistory(@RequestParam(defaultValue = "20") int dimension,
-                                  @RequestParam(defaultValue = "1000") int hiddenNum,
-                                  @RequestParam(defaultValue = "200") int nEpochs) throws IOException, InterruptedException {
-        classifyStock.train(dimension, hiddenNum, nEpochs);
-    }
+//    @RequestMapping(value = "/comment", method = RequestMethod.GET)
+//    public void trainStockComment() {
+//        trainer.CommentTrainer();
+//    }
+//
+//    @RequestMapping(value = "/history", method = RequestMethod.GET)
+//    public void trainStockHistory(@RequestParam(defaultValue = "20") int dimension,
+//                                  @RequestParam(defaultValue = "1000") int hiddenNum,
+//                                  @RequestParam(defaultValue = "200") int nEpochs) throws IOException, InterruptedException {
+//        classifyStock.train(dimension, hiddenNum, nEpochs);
+//    }
 
     @RequestMapping(value = "/history/regression", method = RequestMethod.GET)
     public long trainStockHistoryRegression(@RequestParam String start,
@@ -62,7 +62,7 @@ public class TrainController {
                                             @RequestParam(defaultValue = "true") Boolean isClassify,
                                             @RequestParam(defaultValue = "false") Boolean hasTomorrow,
                                             @RequestParam(defaultValue = "avestart,aveend,avelow,avehigh,avevolume,rate,turnover,indexrate") String properties,
-                                            @RequestParam(defaultValue = "avevolume,rate,turnover") String inputs,
+                                            @RequestParam(defaultValue = "avevolume,rate,turnover,indexrate") String inputs,
                                             @RequestParam(defaultValue = "up_0") String outputs,
                                             @RequestParam(defaultValue = "10") Integer dayNum,
                                             @RequestParam(defaultValue = "200") int nEpochs,
@@ -132,11 +132,11 @@ public class TrainController {
     }
 
 
-    @RequestMapping(value = "/classify", method = RequestMethod.GET)
-    public List<Pair<String, Double>> classify(String test) {
-        return commentClassifier.classify(test, Arrays.asList("up", "down"));
-
-    }
+//    @RequestMapping(value = "/classify", method = RequestMethod.GET)
+//    public List<Pair<String, Double>> classify(String test) {
+//        return commentClassifier.classify(test, Arrays.asList("up", "down"));
+//
+//    }
 
 
 }

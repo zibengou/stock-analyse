@@ -35,8 +35,6 @@ public class DataController {
 
     private static final Logger log = LoggerFactory.getLogger(CommentClassifier.class);
 
-    private static ExecutorService executor = Executors.newFixedThreadPool(8);
-
     private static String[] CODES = new String[]{"600037", "600088", "600128", "600386", "600551", "600633", "600637", "600662", "600716", "600757", "600811", "600825", "600831", "600880", "601098", "601801", "601999", "000504", "000665", "000793"};
 
     private static AtomicInteger codeIndex = new AtomicInteger(0);
@@ -54,91 +52,60 @@ public class DataController {
     DataService dataService;
 
 
-    @RequestMapping(value = "/comment_list", method = RequestMethod.GET)
-    public List<StockComment> getCommentList(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size,
-                                             @RequestParam(defaultValue = "0") int count) {
-        Sort sort = new Sort(Sort.Direction.DESC, "time");
-        PageRequest pageRequest = new PageRequest(page, size, sort);
-//        return commentRepository.findAllByEditedIsFalseAndCommentCountGreaterThan(count, pageRequest);
-        Integer index = codeIndex.getAndIncrement();
-        if (index >= CODES.length - 1) {
-            codeIndex.set(0);
-            index = 0;
-        }
-        String code = CODES[index];
-        log.info("get stock:{},size:{},page:{}", code, size, page);
-        return commentRepository.findAllByStockCodeIsAndEditedIsFalseAndCommentCountGreaterThan(code, count, pageRequest);
-    }
-
-    @RequestMapping(value = "/comment/{id}", method = RequestMethod.PUT)
-    public StockComment getCommentList(@PathVariable(value = "id") int id, @RequestBody StockComment stockComment) throws Exception {
-        StockComment oldComment = commentRepository.findOne(id);
-        if (oldComment == null) {
-            throw new Exception("ID不存在");
-        }
-        stockComment.setId(id);
-        if (StringUtils.isNoneEmpty(stockComment.getContent(), stockComment.getLabel(), stockComment.getCommentSource())) {
-            return commentRepository.save(stockComment);
-        } else {
-            throw new Exception("请求非法");
-        }
-    }
+//    @RequestMapping(value = "/comment_list", method = RequestMethod.GET)
+//    public List<StockComment> getCommentList(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size,
+//                                             @RequestParam(defaultValue = "0") int count) {
+//        Sort sort = new Sort(Sort.Direction.DESC, "time");
+//        PageRequest pageRequest = new PageRequest(page, size, sort);
+////        return commentRepository.findAllByEditedIsFalseAndCommentCountGreaterThan(count, pageRequest);
+//        Integer index = codeIndex.getAndIncrement();
+//        if (index >= CODES.length - 1) {
+//            codeIndex.set(0);
+//            index = 0;
+//        }
+//        String code = CODES[index];
+//        log.info("get stock:{},size:{},page:{}", code, size, page);
+//        return commentRepository.findAllByStockCodeIsAndEditedIsFalseAndCommentCountGreaterThan(code, count, pageRequest);
+//    }
+//
+//    @RequestMapping(value = "/comment/{id}", method = RequestMethod.PUT)
+//    public StockComment getCommentList(@PathVariable(value = "id") int id, @RequestBody StockComment stockComment) throws Exception {
+//        StockComment oldComment = commentRepository.findOne(id);
+//        if (oldComment == null) {
+//            throw new Exception("ID不存在");
+//        }
+//        stockComment.setId(id);
+//        if (StringUtils.isNoneEmpty(stockComment.getContent(), stockComment.getLabel(), stockComment.getCommentSource())) {
+//            return commentRepository.save(stockComment);
+//        } else {
+//            throw new Exception("请求非法");
+//        }
+//    }
 
     @RequestMapping(value = "/update_history", method = RequestMethod.GET)
     public String updateHistoryData(@RequestParam String start, @RequestParam String end) throws Exception {
-        return update(DataService.codes, true, start, end);
+        return dataService.update(DataService.codes, true, start, end);
     }
 
 
-    @RequestMapping(value = "/update_history", method = RequestMethod.POST)
-    public String updateMoreHistoryData(@RequestParam String start, @RequestParam String end, @RequestParam(defaultValue = "false") Boolean withComment, @RequestBody String stockCodes) throws Exception {
-        return update(stockCodes.split(","), withComment, start, end);
-    }
+//    @RequestMapping(value = "/update_history", method = RequestMethod.POST)
+//    public String updateMoreHistoryData(@RequestParam String start, @RequestParam String end, @RequestParam(defaultValue = "false") Boolean withComment, @RequestBody String stockCodes) throws Exception {
+//        return dataService.update(stockCodes.split(","), withComment, start, end);
+//    }
 
-    private String update(String[] stockCodes, Boolean withComment, String start, String end) {
-        List<String> codeList = new ArrayList<>(Arrays.asList(stockCodes));
-        codeList.add("000001");
-        Date st = Timestamp.valueOf(LocalDate.parse(start).atStartOfDay());
-        Date et = Timestamp.valueOf(LocalDate.parse(end).atStartOfDay());
-        for (StockHistoryOriginal original : historyOriginalRepository.findAllByStockCodeInAndTimeBetween(codeList, st, et)) {
-            executor.execute(() -> {
-                try {
-                    StockHistory history = historyRepository.findByStockCodeAndTime(original.getStockCode(), original.getTime());
-                    if (history == null) {
-                        history = new StockHistory(original);
-                    }
-                    Date sst = history.getTime();
-                    Date eed = new Date(sst.getTime() + 86400000);
-                    if (withComment) {
-                        List<StockComment> commentList = commentRepository.findByStockCodeAndTimeBetween(original.getStockCode(), sst, eed);
-                        if (commentList != null) {
-                            history.setAllCount(commentList.size());
-                        }
-                    }
-                    historyRepository.save(history);
-                    log.info("insert history data success stock:{} date:{}", original.getStockCode(), original.getTime());
-                } catch (Exception e) {
-                    log.error(e.getMessage());
-                }
-            });
-
-        }
-        return " data save success.";
-    }
-
-    @RequestMapping(value = "/init_train_data", method = RequestMethod.GET)
-    public void initTrainData(@RequestParam(defaultValue = "600198") String stockCodes, @RequestParam(defaultValue = "5") Integer size, String start, String end) throws Exception {
-        initTrain(stockCodes, true, size, start, end);
-    }
-
-    @RequestMapping(value = "/init_train_data", method = RequestMethod.POST)
-    public void initMoreTrainData(@RequestBody String stockCodes,
-                                  @RequestParam(defaultValue = "5") Integer size,
-                                  @RequestParam String start,
-                                  @RequestParam String end,
-                                  @RequestParam Boolean withComment) throws Exception {
-        initTrain(stockCodes, withComment, size, start, end);
-    }
+//    @RequestMapping(value = "/init_train_data", method = RequestMethod.GET)
+//    public void initTrainData(@RequestParam(defaultValue = "600198") String stockCodes, @RequestParam(defaultValue = "5") Integer size, String start, String end) throws Exception {
+//        initTrain(stockCodes, true, size, start, end);
+//    }
+//
+//    @RequestMapping(value = "/init_train_data", method = RequestMethod.POST)
+//    public void initMoreTrainData(@RequestBody String stockCodes,
+//                                  @RequestParam(defaultValue = "5") Integer size,
+//                                  @RequestParam String start,
+//                                  @RequestParam String end,
+//                                  @RequestParam Boolean withComment) throws Exception {
+//        initTrain(stockCodes, withComment, size, start, end);
+//    }
 
     @Test
     public void initTrain(String stockCodes, Boolean withComment, Integer size, String start, String end) throws IOException {

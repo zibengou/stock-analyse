@@ -150,7 +150,7 @@ public class PredictController {
                                     @RequestParam(defaultValue = "10") Integer dayNum,
                                     @RequestParam(defaultValue = "true") Boolean isClassify,
                                     @RequestParam(defaultValue = "false") Boolean hasTomorrow,
-                                    @RequestParam(defaultValue = "avevolume,rate,turnover") String inputs,
+                                    @RequestParam(defaultValue = "avevolume,rate,turnover,indexrate") String inputs,
                                     @RequestParam(defaultValue = "up_0") String output,
                                     @RequestParam(required = false) String codes) {
         List<String> columns = new ArrayList<>(Arrays.asList(inputs.split(",")));
@@ -165,7 +165,6 @@ public class PredictController {
             entry.getValue().remove("avestart");
             entry.getValue().remove("avecomment");
             entry.getValue().remove("avevolume");
-//            log.info("stock:{} predict data:{} result:{}", code, result, result * todayData.get("avestart"));
         }
         Map<String, Integer> result = regression.predict(codeData, new ArrayList<>(Arrays.asList(output.split(","))), columns, dayNum, isClassify);
         Map<Integer, List<String>> resMap = new LinkedHashMap<>();
@@ -177,11 +176,6 @@ public class PredictController {
             resMap.get(value).add(code);
         }
         return resMap;
-//        log.info("stock:{} common:[ avestart:{} avecomment:{} avevolume:{} ] result:{}", code,
-//                todayData.get("avestart"), todayData.get("avecomment"), todayData.get("avevolume"),
-//                result
-//        );
-
 
     }
 

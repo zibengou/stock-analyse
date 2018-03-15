@@ -40,6 +40,7 @@ public class Crawler {
     private static IHttpAsyncClient client = new HttpAsyncClient(10, 5000);
 
     public static DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    public static DateTimeFormatter todayFormat = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     private static ExecutorService executorService = Executors.newFixedThreadPool(8);
 
@@ -52,14 +53,19 @@ public class Crawler {
     @Autowired
     StockRealtimeRepository realtimeRepository;
 
-    /***
-     * 每小时获取一次评论数据
-     */
-//    @Scheduled()
+    @Autowired
+    DataService dataService;
+
+    @Scheduled(cron = "0 0 17 ? * MON-FRI")
     public void StockComment() {
         for (String code : DataService.codes) {
             StockComment(code);
         }
+    }
+    @Scheduled(cron = "0 30 17 ? * MON-FRI")
+    public void updateData() {
+        String todayTime = LocalDate.now().atStartOfDay().format(timeFormat);
+        dataService.update(DataService.codes, true, todayTime, todayTime);
     }
 
     public void StockComment(String code) {
@@ -190,16 +196,14 @@ public class Crawler {
         });
     }
 
-    @Test
-    public void test() throws InterruptedException {
-        getRealTimeData("http://hq.sinajs.cn/list=sh601003,sh601001");
-        Thread.sleep(2000);
+
+    @Scheduled(cron = "0 0 16 ? * MON-FRI")
+    public void StockHistoryData() {
+        String today = LocalDate.now().format(todayFormat);
+        StockHistoryData(today, today, false);
+        StockHistoryData(today, today, "000001", true);
     }
 
-
-    /***
-     * 手动触发获取历史数据
-     */
     public void StockHistoryData(String start, String end, Boolean isIndex) {
         for (String code : DataService.codes) {
             StockHistoryData(start, end, code, isIndex);
