@@ -2,7 +2,6 @@ package com.stock.analyseservice.task;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.stock.analyseservice.dao.domain.StockComment;
 import com.stock.analyseservice.dao.domain.StockHistoryOriginal;
 import com.stock.analyseservice.dao.domain.StockRealtime;
@@ -158,7 +157,7 @@ public class Crawler {
                 codeList = new ArrayList<>();
             }
         }
-        String request = url + StringUtils.join(codeList, ",");
+        String request = url + StringUtils.join(codeList, ",") + ",sh000001";
         getRealTimeData(request);
         logger.info("init all realtime data success");
     }
