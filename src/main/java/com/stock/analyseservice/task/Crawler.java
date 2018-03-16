@@ -40,7 +40,7 @@ public class Crawler {
     private static IHttpAsyncClient client = new HttpAsyncClient(10, 5000);
 
     public static DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    public static DateTimeFormatter todayFormat = DateTimeFormatter.ofPattern("yyyyMMdd");
+    public static DateTimeFormatter todayFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     private static ExecutorService executorService = Executors.newFixedThreadPool(8);
 
