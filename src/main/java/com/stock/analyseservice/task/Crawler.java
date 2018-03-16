@@ -64,7 +64,7 @@ public class Crawler {
     }
     @Scheduled(cron = "0 30 17 ? * MON-FRI")
     public void updateData() {
-        String todayTime = LocalDate.now().atStartOfDay().format(timeFormat);
+        String todayTime = LocalDate.now().format(todayFormat);
         dataService.update(DataService.codes, true, todayTime, todayTime);
     }
 
