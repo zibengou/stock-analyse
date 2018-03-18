@@ -26,7 +26,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -40,7 +39,8 @@ public class Crawler {
     private static IHttpAsyncClient client = new HttpAsyncClient(10, 5000);
 
     public static DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    public static DateTimeFormatter todayFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    public static DateTimeFormatter todayFormat = DateTimeFormatter.ofPattern("yyyyMMdd");
+    public static DateTimeFormatter todayFormat2 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     private static ExecutorService executorService = Executors.newFixedThreadPool(8);
 
@@ -62,10 +62,38 @@ public class Crawler {
             StockComment(code);
         }
     }
-    @Scheduled(cron = "0 30 17 ? * MON-FRI")
+    @Scheduled(cron = "0 30 18 ? * MON-FRI")
     public void updateData() {
-        String todayTime = LocalDate.now().format(todayFormat);
+        String todayTime = LocalDate.now().format(todayFormat2);
         dataService.update(DataService.codes, true, todayTime, todayTime);
+    }
+
+    /***
+     * 每分钟获取一次实时数据
+     */
+    @Scheduled(cron = "0 0/1 9,10,11,13,14 ? * MON-FRI")
+    public void StockRealTimeData() {
+        String url = "http://hq.sinajs.cn/list=";
+        List<String> codeList = new ArrayList<>();
+        for (int i = 0; i < DataService.codes.length; i++) {
+            codeList.add("sh" + DataService.codes[i]);
+            if (i % 100 == 0) {
+                String request = url + StringUtils.join(codeList, ",");
+                getRealTimeData(request);
+                codeList = new ArrayList<>();
+            }
+        }
+        String request = url + StringUtils.join(codeList, ",") + ",sh000001";
+        getRealTimeData(request);
+        logger.info("init all realtime data success");
+    }
+
+
+    @Scheduled(cron = "0 0 18 ? * MON-FRI")
+    public void StockHistoryData() {
+        String today = LocalDate.now().format(todayFormat);
+        StockHistoryData(today, today, false);
+        StockHistoryData(today, today, "000001", true);
     }
 
     public void StockComment(String code) {
@@ -148,26 +176,6 @@ public class Crawler {
         });
     }
 
-    /***
-     * 每分钟获取一次实时数据
-     */
-    @Scheduled(cron = "0 0/1 9,10,11,13,14 ? * MON-FRI")
-    public void StockRealTimeData() {
-        String url = "http://hq.sinajs.cn/list=";
-        List<String> codeList = new ArrayList<>();
-        for (int i = 0; i < DataService.codes.length; i++) {
-            codeList.add("sh" + DataService.codes[i]);
-            if (i % 100 == 0) {
-                String request = url + StringUtils.join(codeList, ",");
-                getRealTimeData(request);
-                codeList = new ArrayList<>();
-            }
-        }
-        String request = url + StringUtils.join(codeList, ",") + ",sh000001";
-        getRealTimeData(request);
-        logger.info("init all realtime data success");
-    }
-
     private void getRealTimeData(String url) {
         client.handleGet(url, new CompletionHandler<Response, String>() {
             @Override
@@ -194,14 +202,6 @@ public class Crawler {
 
             }
         });
-    }
-
-
-    @Scheduled(cron = "0 0 16 ? * MON-FRI")
-    public void StockHistoryData() {
-        String today = LocalDate.now().format(todayFormat);
-        StockHistoryData(today, today, false);
-        StockHistoryData(today, today, "000001", true);
     }
 
     public void StockHistoryData(String start, String end, Boolean isIndex) {
