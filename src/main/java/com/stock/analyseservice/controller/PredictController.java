@@ -150,7 +150,7 @@ public class PredictController {
                                     @RequestParam(defaultValue = "10") Integer dayNum,
                                     @RequestParam(defaultValue = "true") Boolean isClassify,
                                     @RequestParam(defaultValue = "false") Boolean hasTomorrow,
-                                    @RequestParam(defaultValue = "avevolume,rate,turnover,indexrate") String inputs,
+                                    @RequestParam(defaultValue = "avevolume,rate,turnover,indexrate,avecomment") String inputs,
                                     @RequestParam(defaultValue = "up_0") String output,
                                     @RequestParam(required = false) String codes) {
         List<String> columns = new ArrayList<>(Arrays.asList(inputs.split(",")));
