@@ -7,6 +7,12 @@ import org.datavec.api.split.FileSplit;
 import org.deeplearning4j.api.storage.StatsStorage;
 import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator;
 import org.deeplearning4j.datasets.iterator.impl.ListDataSetIterator;
+import org.deeplearning4j.earlystopping.EarlyStoppingConfiguration;
+import org.deeplearning4j.earlystopping.EarlyStoppingModelSaver;
+import org.deeplearning4j.earlystopping.saver.LocalFileModelSaver;
+import org.deeplearning4j.earlystopping.scorecalc.DataSetLossCalculator;
+import org.deeplearning4j.earlystopping.termination.MaxEpochsTerminationCondition;
+import org.deeplearning4j.earlystopping.termination.MaxTimeIterationTerminationCondition;
 import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
@@ -34,6 +40,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class RegressionStock {
     private static final Logger log = LoggerFactory.getLogger(CommentClassifier.class);
@@ -44,6 +51,8 @@ public class RegressionStock {
 
     private static final File train_temp = new File("train_temp");
     private static final File test_temp = new File("test_temp");
+
+    private static final String stopping_dir = "stop_dir";
 
     private static final String avestart = "avestart";
     private static final String avevolume = "avevolume";
@@ -169,6 +178,7 @@ public class RegressionStock {
                 .activation(Activation.SOFTMAX).weightInit(WeightInit.XAVIER)
                 .nIn(hiddens.get(hiddens.size() - 1).getKey()).nOut(isClassify ? outputs.size() * 2 : outputs.size()).build());
         MultiLayerConfiguration conf = builder.pretrain(false).backprop(true).build();
+
         MultiLayerNetwork net = new MultiLayerNetwork(conf);
         net.init();
         net.setListeners(new ScoreIterationListener(1000));
@@ -182,18 +192,25 @@ public class RegressionStock {
 //        uiServer.attach(statsStorage);
 
         Evaluation evaluation = new Evaluation();
+        double lastF1Score = 0;
         for (int i = 0; i < nEpochs; i++) {
 //            trainIterator.reset();
             net.fit(trainIterator);
-            if (i % 50 == 49) {
+            if (i % 30 == 29) {
                 log.info("iterator num:{} / {}", i + 1, nEpochs);
                 evaluation = net.evaluate(testIterator);
+                double f1 = evaluation.f1();
                 log.info(evaluation.stats());
-                try {
-                    ModelSerializer.writeModel(net, model, true);
-                    log.info("save net model data success:{}", model.getPath());
-                } catch (IOException e) {
-                    log.error("save net model data error:{}", e.getMessage());
+                if (f1 > lastF1Score) {
+                    log.info("get higher f1 score this:{} last:{}", f1, lastF1Score);
+                    try {
+                        ModelSerializer.writeModel(net, model, true);
+                        log.info("save net model data success:{}", model.getPath());
+                    } catch (IOException e) {
+                        log.error("save net model data error:{}", e.getMessage());
+                    }
+                } else {
+                    log.info("not get higher f1 score this:{} last:{}", f1, lastF1Score);
                 }
             }
         }

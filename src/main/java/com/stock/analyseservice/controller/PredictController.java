@@ -147,7 +147,7 @@ public class PredictController {
 
     @RequestMapping(value = "/regression", method = RequestMethod.GET)
     public Object predictRegression(@RequestParam String date,
-                                    @RequestParam(defaultValue = "10") Integer dayNum,
+                                    @RequestParam(defaultValue = "20") Integer dayNum,
                                     @RequestParam(defaultValue = "true") Boolean isClassify,
                                     @RequestParam(defaultValue = "false") Boolean hasTomorrow,
                                     @RequestParam(defaultValue = "avevolume,rate,turnover,indexrate") String inputs,

@@ -64,7 +64,7 @@ public class TrainController {
                                             @RequestParam(defaultValue = "avestart,aveend,avelow,avehigh,avevolume,rate,turnover,indexrate") String properties,
                                             @RequestParam(defaultValue = "avevolume,rate,turnover,indexrate") String inputs,
                                             @RequestParam(defaultValue = "up_0") String outputs,
-                                            @RequestParam(defaultValue = "10") Integer dayNum,
+                                            @RequestParam(defaultValue = "20") Integer dayNum,
                                             @RequestParam(defaultValue = "200") int nEpochs,
                                             @RequestParam(defaultValue = "1") int seed,
                                             @RequestParam(defaultValue = "default") String netTyle,
@@ -85,7 +85,7 @@ public class TrainController {
         pathList.add(String.valueOf(dayNum));
         pathList.addAll(propertyList);
         Collections.sort(pathList);
-        String path = String.join("_", pathList) + (hasTomorrow ? "_tomorrow" : "");
+        String path = String.join("_", pathList) + (hasTomorrow ? "_tomorrow_" : "_") + String.join("_", netTyle, hidden);
         File trainFile = new File(path);
         List<Map<String, Float>> data = dataService.getTrainData(st, et, dayNum, propertyList, trainFile, dataUpdate, hasTomorrow);
         Thread.sleep(1000);
