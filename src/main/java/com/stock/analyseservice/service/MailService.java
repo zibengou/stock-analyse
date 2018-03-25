@@ -8,6 +8,9 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
+import java.util.List;
+
 @Component
 public class MailService {
 
@@ -20,20 +23,20 @@ public class MailService {
     public static final String to = "zibengou@outlook.com";
 
     public void send(String title, String content) {
-        send(title, content, to);
+        send(title, content, Arrays.asList(to));
     }
 
-    public void send(String title, String content, String to) {
+    public void send(String title, String content, List<String> to) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from); //发送者
-        message.setTo(to); //接受者
+        message.setTo(to.toArray(new String[to.size()])); //接受者
         message.setSubject(title); //发送标题
         message.setText(content);  //发送内容
         try {
             sender.send(message);
             log.error("send mail success:{}", message);
         } catch (Exception e) {
-            log.error("send mail error:{}", message);
+            log.error("send mail error:{}", e.getMessage());
         }
     }
 
