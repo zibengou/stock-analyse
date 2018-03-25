@@ -2,22 +2,39 @@ package com.stock.analyseservice.task;
 
 import com.stock.analyseservice.algo.ClassifyStock;
 import com.stock.analyseservice.algo.nlp.CommentClassifier;
+import com.stock.analyseservice.controller.PredictController;
+import com.stock.analyseservice.controller.TrainController;
 import com.stock.analyseservice.dao.domain.StockComment;
 import com.stock.analyseservice.dao.repository.StockCommentRepository;
+import com.stock.analyseservice.service.MailService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.*;
 
 @Component
 public class Trainer {
 
+    Logger log = LoggerFactory.getLogger(Trainer.class);
+
     private CommentClassifier commentClassifier = CommentClassifier.newInstance();
 
     @Autowired
     private StockCommentRepository commentRepository;
+
+    @Autowired
+    private MailService mailService;
+
+    @Autowired
+    private TrainController trainController;
+
+    @Autowired
+    private PredictController predictController;
 
 
     /***
@@ -38,8 +55,35 @@ public class Trainer {
     /***
      * 每天更新一次数据预测模型
      */
-//    @Scheduled
-    public void HistoryDataTrainer() throws IOException, InterruptedException {
-//        classifyStock.train();
+    @Scheduled(cron = "0 00 19 ? * MON-FRI")
+    public void HistoryDataTrainer() throws InterruptedException {
+        trainController.trainStockHistoryRegression("2018-01-01",
+                LocalDate.now().format(Crawler.todayFormat2),
+                "500-RELU,50-RELU",
+                false, true, true, false,
+                "avestart,aveend,avelow,avehigh,avevolume,rate,turnover,indexrate",
+                "avevolume,rate,turnover,indexrate",
+                "up_5",
+                20,
+                200,
+                1,
+                "default",
+                0.005f);
+    }
+
+    @Scheduled(cron = "0 00 20 ? * MON-FRI")
+    public void HistoryDataPredictor() throws InterruptedException {
+        String today = LocalDate.now().format(Crawler.todayFormat2);
+        String netType = "default";
+        Map<Integer, List<String>> result = predictController.predictRegression(today,
+                20,
+                true,
+                false,
+                "avevolume,rate,turnover,indexrate",
+                "up_5",
+                "default", null);
+        String mailContent = "看涨>5% : " + String.join(",", result.get(1));
+        String mailTitle = today + "涨幅大于5%预测结果(" + netType + ")";
+        mailService.send(mailTitle, mailContent);
     }
 }

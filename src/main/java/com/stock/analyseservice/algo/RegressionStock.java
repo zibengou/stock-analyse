@@ -71,11 +71,11 @@ public class RegressionStock {
         this.rng = new Random(seed);
     }
 
-    public Map<String, Integer> predict(Map<String, Map<String, Float>> codeDatas, List<String> outputs, List<String> cs, Integer dayNum, Boolean isClassify) {
+    public Map<String, Integer> predict(Map<String, Map<String, Float>> codeDatas, List<String> outputs, List<String> cs, Integer dayNum, Boolean isClassify, String netType) {
         List<String> columns = new ArrayList<>(cs);
         columns.addAll(outputs);
         Collections.sort(columns);
-        String path = String.join("_", columns) + "_" + dayNum;
+        String path = String.join("_", columns) + "_" + dayNum + "_" + netType;
         File model = new File(path);
         MultiLayerNetwork net = null;
         try {
@@ -139,7 +139,7 @@ public class RegressionStock {
             inputs.addAll(outputs);
             Collections.sort(columns);
             Collections.sort(inputs);
-            String path = String.join("_", inputs) + "_" + dayNum;
+            String path = String.join("_", inputs) + "_" + dayNum + "_" + netType;
             File model = new File(path);
             if (!update && model.exists()) {
                 log.info("net model:{} already exists ", model.getPath());

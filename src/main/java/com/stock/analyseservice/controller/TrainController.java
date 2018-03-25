@@ -10,6 +10,7 @@ import org.nd4j.linalg.primitives.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -63,7 +64,7 @@ public class TrainController {
                                             @RequestParam(defaultValue = "false") Boolean hasTomorrow,
                                             @RequestParam(defaultValue = "avestart,aveend,avelow,avehigh,avevolume,rate,turnover,indexrate") String properties,
                                             @RequestParam(defaultValue = "avevolume,rate,turnover,indexrate") String inputs,
-                                            @RequestParam(defaultValue = "up_0") String outputs,
+                                            @RequestParam(defaultValue = "up_5") String outputs,
                                             @RequestParam(defaultValue = "20") Integer dayNum,
                                             @RequestParam(defaultValue = "200") int nEpochs,
                                             @RequestParam(defaultValue = "1") int seed,
@@ -85,7 +86,7 @@ public class TrainController {
         pathList.add(String.valueOf(dayNum));
         pathList.addAll(propertyList);
         Collections.sort(pathList);
-        String path = String.join("_", pathList) + (hasTomorrow ? "_tomorrow_" : "_") + String.join("_", netTyle, hidden);
+        String path = String.join("_", pathList) + (hasTomorrow ? "_tomorrow_" : "_");
         File trainFile = new File(path);
         List<Map<String, Float>> data = dataService.getTrainData(st, et, dayNum, propertyList, trainFile, dataUpdate, hasTomorrow);
         Thread.sleep(1000);

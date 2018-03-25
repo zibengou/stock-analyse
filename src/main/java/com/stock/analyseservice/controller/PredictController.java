@@ -7,6 +7,10 @@ import com.stock.analyseservice.dao.domain.StockHistoryOriginal;
 import com.stock.analyseservice.dao.repository.StockHistoryOriginalRepository;
 import com.stock.analyseservice.dao.repository.StockHistoryRepository;
 import com.stock.analyseservice.service.DataService;
+import com.stock.analyseservice.service.MailService;
+import com.stock.analyseservice.task.Crawler;
+import com.stock.analyseservice.task.Trainer;
+import org.apache.commons.lang3.StringUtils;
 import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.util.ModelSerializer;
@@ -41,7 +45,13 @@ public class PredictController {
     StockHistoryOriginalRepository originalRepository;
 
     @Autowired
+    Trainer trainer;
+
+    @Autowired
     DataService dataService;
+
+    @Autowired
+    MailService mailService;
 
     public PredictController() {
         refreshModel();
@@ -145,16 +155,32 @@ public class PredictController {
         refreshModel();
     }
 
+    @RequestMapping(value = "/test", method = RequestMethod.GET)
+    public void refreshModelAPI(Boolean aa) throws InterruptedException {
+//        mailService.send(title, content);
+        if (aa) {
+            trainer.HistoryDataTrainer();
+        } else {
+            trainer.HistoryDataPredictor();
+        }
+    }
+
+    @RequestMapping(value = "/mail", method = RequestMethod.GET)
+    public void refreshModelAPI(String title,String content) throws InterruptedException {
+        mailService.send(title, content);
+    }
+
     @RequestMapping(value = "/regression", method = RequestMethod.GET)
-    public Object predictRegression(@RequestParam String date,
-                                    @RequestParam(defaultValue = "20") Integer dayNum,
-                                    @RequestParam(defaultValue = "true") Boolean isClassify,
-                                    @RequestParam(defaultValue = "false") Boolean hasTomorrow,
-                                    @RequestParam(defaultValue = "avevolume,rate,turnover,indexrate") String inputs,
-                                    @RequestParam(defaultValue = "up_0") String output,
-                                    @RequestParam(required = false) String codes) {
+    public Map<Integer, List<String>> predictRegression(@RequestParam String date,
+                                                        @RequestParam(defaultValue = "20") Integer dayNum,
+                                                        @RequestParam(defaultValue = "true") Boolean isClassify,
+                                                        @RequestParam(defaultValue = "false") Boolean hasTomorrow,
+                                                        @RequestParam(defaultValue = "avevolume,rate,turnover,indexrate") String inputs,
+                                                        @RequestParam(defaultValue = "up_5") String output,
+                                                        @RequestParam(defaultValue = "default") String netType,
+                                                        @RequestParam(required = false) String codes) {
         List<String> columns = new ArrayList<>(Arrays.asList(inputs.split(",")));
-        List<String> codeList = Arrays.asList((codes == null ? DataService.codes : codes.split(",")));
+        List<String> codeList = Arrays.asList((StringUtils.isEmpty(codes) ? DataService.codes : codes.split(",")));
         Map<String, Map<String, Float>> codeData = dataService.getPredictData(codeList, date, dayNum, columns, hasTomorrow);
         for (Map.Entry<String, Map<String, Float>> entry : codeData.entrySet()) {
             String code = entry.getKey();
@@ -166,7 +192,7 @@ public class PredictController {
             entry.getValue().remove("avecomment");
             entry.getValue().remove("avevolume");
         }
-        Map<String, Integer> result = regression.predict(codeData, new ArrayList<>(Arrays.asList(output.split(","))), columns, dayNum, isClassify);
+        Map<String, Integer> result = regression.predict(codeData, new ArrayList<>(Arrays.asList(output.split(","))), columns, dayNum, isClassify, netType);
         Map<Integer, List<String>> resMap = new LinkedHashMap<>();
         resMap.put(0, new ArrayList<>());
         resMap.put(1, new ArrayList<>());
@@ -175,6 +201,9 @@ public class PredictController {
             Integer value = entry.getValue();
             resMap.get(value).add(code);
         }
+//        String mailContent = String.join(",", resMap.get(1));
+//        String mailTitle = LocalDateTime.now().format(Crawler.timeFormat);
+//        mailService.send(mailTitle, mailContent);
         return resMap;
 
     }
