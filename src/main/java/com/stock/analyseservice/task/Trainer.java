@@ -5,7 +5,9 @@ import com.stock.analyseservice.algo.nlp.CommentClassifier;
 import com.stock.analyseservice.controller.PredictController;
 import com.stock.analyseservice.controller.TrainController;
 import com.stock.analyseservice.dao.domain.StockComment;
+import com.stock.analyseservice.dao.domain.StockUser;
 import com.stock.analyseservice.dao.repository.StockCommentRepository;
+import com.stock.analyseservice.dao.repository.StockUserRepository;
 import com.stock.analyseservice.service.MailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class Trainer {
@@ -35,6 +38,9 @@ public class Trainer {
 
     @Autowired
     private PredictController predictController;
+
+    @Autowired
+    private StockUserRepository userRepository;
 
 
     /***
@@ -84,6 +90,7 @@ public class Trainer {
                 "default", null);
         String mailContent = "看涨>5% : " + String.join(",", result.get(1));
         String mailTitle = today + "涨幅大于5%预测结果(" + netType + ")";
-        mailService.send(mailTitle, mailContent);
+        List<String> mailList = userRepository.findAll().stream().map(StockUser::getMail).collect(Collectors.toList());
+        mailService.send(mailTitle, mailContent, mailList);
     }
 }
