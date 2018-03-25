@@ -209,16 +209,22 @@ public class RegressionStock {
                     } catch (IOException e) {
                         log.error("save net model data error:{}", e.getMessage());
                     }
+                    lastF1Score = f1;
                 } else {
                     log.info("not get higher f1 score this:{} last:{}", f1, lastF1Score);
                 }
             }
         }
-        try {
-            ModelSerializer.writeModel(net, model, true);
-            log.info("save net model data success:{}", model.getPath());
-        } catch (IOException e) {
-            log.error("save net model data error:{}", e.getMessage());
+        evaluation = net.evaluate(testIterator);
+        double f1 = evaluation.f1();
+        if (f1 > lastF1Score) {
+            try {
+                log.info("get higher f1 score this:{} last:{}", f1, lastF1Score);
+                ModelSerializer.writeModel(net, model, true);
+                log.info("save net model data success:{}", model.getPath());
+            } catch (IOException e) {
+                log.error("save net model data error:{}", e.getMessage());
+            }
         }
     }
 

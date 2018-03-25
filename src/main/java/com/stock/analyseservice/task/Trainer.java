@@ -65,7 +65,7 @@ public class Trainer {
                 "avevolume,rate,turnover,indexrate",
                 "up_5",
                 20,
-                200,
+                300,
                 1,
                 "default",
                 0.005f);

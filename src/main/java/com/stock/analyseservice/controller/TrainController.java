@@ -86,7 +86,7 @@ public class TrainController {
         pathList.add(String.valueOf(dayNum));
         pathList.addAll(propertyList);
         Collections.sort(pathList);
-        String path = String.join("_", pathList) + (hasTomorrow ? "_tomorrow_" : "_");
+        String path = String.join("_", pathList) + (hasTomorrow ? "_tomorrow_" : "");
         File trainFile = new File(path);
         List<Map<String, Float>> data = dataService.getTrainData(st, et, dayNum, propertyList, trainFile, dataUpdate, hasTomorrow);
         Thread.sleep(1000);
