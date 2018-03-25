@@ -74,12 +74,12 @@ public class Trainer {
                 300,
                 1,
                 "default",
-                0.005f);
+                0.001f);
     }
 
     @Scheduled(cron = "0 00 20 ? * MON-FRI")
     public void HistoryDataPredictor() throws InterruptedException {
-        String today = LocalDate.now().format(Crawler.todayFormat2);
+        String today = LocalDate.now().plusDays(1).format(Crawler.todayFormat2);
         String netType = "default";
         Map<Integer, List<String>> result = predictController.predictRegression(today,
                 20,
