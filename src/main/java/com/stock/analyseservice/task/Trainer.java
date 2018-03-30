@@ -106,15 +106,15 @@ public class Trainer {
         String netType = "default";
         String inputs = sortInputs("avevolume,rate,turnover,indexrate");
         String output = "up_5";
-//        Map<Integer, List<String>> result = predictController.predictRegression(tomorrow,
-//                20,
-//                true,
-//                false,
-//                inputs,
-//                output,
-//                netType, null);
-//        List<String> codeList = result.get(1);
-        List<String> codeList = Arrays.asList("600198", "600078");
+        Map<Integer, List<String>> result = predictController.predictRegression(tomorrow,
+                20,
+                true,
+                false,
+                inputs,
+                output,
+                netType, null);
+        List<String> codeList = result.get(1);
+//        List<String> codeList = Arrays.asList("600198", "600078");
         try {
             sendPredictResult(tomorrowDate, inputs, output, netType, codeList);
         } catch (MessagingException e) {
