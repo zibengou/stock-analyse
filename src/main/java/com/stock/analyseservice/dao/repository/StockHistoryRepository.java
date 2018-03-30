@@ -14,6 +14,8 @@ public interface StockHistoryRepository extends JpaRepository<StockHistory, Inte
 
     StockHistory findByStockCodeAndTime(String stockCode, Date time);
 
+    List<StockHistory> findByStockCodeInAndTime(List<String> stockCodes, Date time);
+
     List<StockHistory> findByStockCodeAndTimeBetween(String stockCode, Date start, Date end);
 
     List<StockHistory> findByStockCodeAndTimeBetweenOrderByTimeDesc(String stockCode, Date start, Date end);

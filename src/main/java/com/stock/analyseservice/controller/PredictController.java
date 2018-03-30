@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.mail.MessagingException;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -156,18 +157,14 @@ public class PredictController {
     }
 
     @RequestMapping(value = "/test", method = RequestMethod.GET)
-    public void refreshModelAPI(Boolean aa) throws InterruptedException {
-//        mailService.send(title, content);
-        if (aa) {
-            trainer.HistoryDataTrainer();
-        } else {
-            trainer.HistoryDataPredictor();
-        }
+    public void refreshModelAPI(String date) {
+        LocalDate d = LocalDate.parse(date);
+        trainer.HistoryDataPredictor(d);
     }
 
     @RequestMapping(value = "/mail", method = RequestMethod.GET)
-    public void refreshModelAPI(String title,String content) throws InterruptedException {
-        mailService.send(title, content);
+    public void refreshModelAPI(String title, String contents) throws MessagingException {
+        mailService.send(title, Arrays.asList(contents.split(",")));
     }
 
     @RequestMapping(value = "/regression", method = RequestMethod.GET)

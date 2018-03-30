@@ -30,6 +30,8 @@ public class StockUser {
     private String name;
     private String mail;
 
+    private Boolean enabled;
+
     @CreatedDate
     private Date createTime;
 
