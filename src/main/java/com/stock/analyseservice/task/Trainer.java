@@ -148,14 +148,18 @@ public class Trainer {
     private void savePredictCodes(LocalDate date, String inputs, String output, String netType, List<String> codeList) {
         Date time = Timestamp.valueOf(date.atStartOfDay());
         String codes = String.join(",", codeList);
+        StockPredict oldData = predictRepository.findByTimeAndInputsAndOutputAndNetType(time, inputs, output, netType);
         StockPredict stockPredict = new StockPredict(inputs, output, netType, time, codes);
+        if (oldData != null) {
+            stockPredict.setId(oldData.getId());
+        }
         predictRepository.save(stockPredict);
         log.info("save predict codes success : {}", stockPredict);
     }
 
     private List<String> getTodayResult(LocalDate date, String inputs, String output, String netType) {
         if (date.getDayOfWeek().getValue() == 1) {
-            date = date.plusDays(2);
+            date = date.minusDays(2);
         }
         Date today = Timestamp.valueOf(date.minusDays(1).atStartOfDay());
         List<String> resultList = new ArrayList<>();
