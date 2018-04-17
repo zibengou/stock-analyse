@@ -14,6 +14,7 @@ import com.stock.analyseservice.dao.repository.StockPredictRepository;
 import com.stock.analyseservice.dao.repository.StockUserRepository;
 import com.stock.analyseservice.service.DataService;
 import com.stock.analyseservice.service.MailService;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,7 +80,7 @@ public class Trainer {
      */
     @Scheduled(cron = "0 00 19 ? * MON-FRI")
     public void HistoryDataTrainer() throws InterruptedException {
-        trainController.trainStockHistoryRegression("2018-02-",
+        trainController.trainStockHistoryRegression("2018-02-15",
                 LocalDate.now().format(Crawler.todayFormat2),
                 "500-RELU,50-RELU",
                 false, true, true, false,
@@ -98,6 +99,9 @@ public class Trainer {
     @Scheduled(cron = "0 00 20 ? * MON-FRI")
     public void HistoryDataPredictor() {
         LocalDate tomorrowDate = LocalDate.now().plusDays(1);
+        if (tomorrowDate.getDayOfWeek().getValue() > 5) {
+            tomorrowDate = tomorrowDate.plusDays(2);
+        }
         HistoryDataPredictor(tomorrowDate);
     }
 
@@ -144,12 +148,19 @@ public class Trainer {
     private void savePredictCodes(LocalDate date, String inputs, String output, String netType, List<String> codeList) {
         Date time = Timestamp.valueOf(date.atStartOfDay());
         String codes = String.join(",", codeList);
+        StockPredict oldData = predictRepository.findByTimeAndInputsAndOutputAndNetType(time, inputs, output, netType);
         StockPredict stockPredict = new StockPredict(inputs, output, netType, time, codes);
+        if (oldData != null) {
+            stockPredict.setId(oldData.getId());
+        }
         predictRepository.save(stockPredict);
         log.info("save predict codes success : {}", stockPredict);
     }
 
     private List<String> getTodayResult(LocalDate date, String inputs, String output, String netType) {
+        if (date.getDayOfWeek().getValue() == 1) {
+            date = date.minusDays(2);
+        }
         Date today = Timestamp.valueOf(date.minusDays(1).atStartOfDay());
         List<String> resultList = new ArrayList<>();
         StockPredict predict = predictRepository.findByTimeAndInputsAndOutputAndNetType(today, inputs, output, netType);
