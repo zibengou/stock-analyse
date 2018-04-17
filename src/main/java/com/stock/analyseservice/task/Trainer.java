@@ -79,7 +79,7 @@ public class Trainer {
      */
     @Scheduled(cron = "0 00 19 ? * MON-FRI")
     public void HistoryDataTrainer() throws InterruptedException {
-        trainController.trainStockHistoryRegression("2018-01-01",
+        trainController.trainStockHistoryRegression("2018-02-",
                 LocalDate.now().format(Crawler.todayFormat2),
                 "500-RELU,50-RELU",
                 false, true, true, false,

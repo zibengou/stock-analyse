@@ -151,7 +151,7 @@ public class RegressionStock {
         }
     }
 
-    private void train(List<Map<String, Float>> data, List<Pair<Integer, String>> hiddens, Float learningRate, Integer nEpochs, List<String> outputs, File model, Boolean isClassify, String netType) {
+    public void train(List<Map<String, Float>> data, List<Pair<Integer, String>> hiddens, Float learningRate, Integer nEpochs, List<String> outputs, File model, Boolean isClassify, String netType) {
         List<DataSetIterator> iterators = null;
         try {
             iterators = getTrainingData(data, outputs, isClassify);

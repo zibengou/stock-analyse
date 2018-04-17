@@ -69,7 +69,7 @@ public class TrainController {
                                             @RequestParam(defaultValue = "200") int nEpochs,
                                             @RequestParam(defaultValue = "1") int seed,
                                             @RequestParam(defaultValue = "default") String netTyle,
-                                            @RequestParam(defaultValue = "0.005") Float learningRate) throws InterruptedException {
+                                            @RequestParam(defaultValue = "0.005") Float learningRate) {
         Date st = Timestamp.valueOf(LocalDate.parse(start).atStartOfDay());
         Date et = Timestamp.valueOf(LocalDate.parse(end).atStartOfDay());
         List<String> ps = Arrays.asList(properties.split(","));
@@ -89,7 +89,65 @@ public class TrainController {
         String path = String.join("_", pathList) + (hasTomorrow ? "_tomorrow_" : "");
         File trainFile = new File(path);
         List<Map<String, Float>> data = dataService.getTrainData(st, et, dayNum, propertyList, trainFile, dataUpdate, hasTomorrow);
-        Thread.sleep(1000);
+        List<Pair<Integer, String>> hiddens = parseHiddens(hidden);
+        regressionStock.setSeed(seed);
+        Thread regressionThread = new Thread(() -> regressionStock.train(trainFile, hiddens, learningRate, nEpochs, dayNum, columns, out, modelUpdate, isClassify, netTyle));
+        return runThread(regressionThread);
+    }
+
+    @RequestMapping(value = "/realtime/classify", method = RequestMethod.GET)
+    public long trainRealtime(@RequestParam String start,
+                              @RequestParam String end,
+                              @RequestParam(required = false) String codes,
+                              @RequestParam(defaultValue = "500-RELU,50-RELU") String hidden,
+                              @RequestParam(defaultValue = "false") Boolean dataUpdate,
+                              @RequestParam(defaultValue = "now,b1,b2,b3,s1,s2,s3") String inputs,
+                              @RequestParam(defaultValue = "up_2") String output,
+                              @RequestParam(defaultValue = "10") Integer timeRange,
+                              @RequestParam(defaultValue = "200") int nEpochs,
+                              @RequestParam(defaultValue = "1") int seed,
+                              @RequestParam(defaultValue = "default") String netStyle,
+                              @RequestParam(defaultValue = "0.005") Float learningRate) throws InterruptedException, IOException {
+        Date st = Timestamp.valueOf(LocalDate.parse(start).atStartOfDay());
+        Date et = Timestamp.valueOf(LocalDate.parse(end).atStartOfDay());
+        List<String> codeList = codes == null ? Arrays.asList(DataService.codes) : Arrays.asList(codes.split(","));
+        String filePath = String.join("_", start, end, timeRange.toString());
+        File trainData = new File(filePath);
+        if (dataUpdate || !trainData.exists()) {
+            dataService.initRealTimeData(st, et, codeList, trainData, timeRange);
+            log.info("init train data success: {}", filePath);
+        } else {
+            log.info("train data:{} already exists ", filePath);
+        }
+        regressionStock.setSeed(seed);
+        List<Pair<Integer, String>> hiddens = parseHiddens(hidden);
+        List<String> columns = new ArrayList<>(Arrays.asList(inputs.split(",")));
+        columns.add(output);
+        Collections.sort(columns);
+        String modelPath = String.join("_", columns) + "_" + netStyle;
+        File modelFile = new File(modelPath);
+        List<Map<String, Float>> dataList = RegressionStock.readTrainData(trainData, columns);
+        Thread thread = new Thread(() -> regressionStock.train(dataList, hiddens, learningRate, nEpochs, Arrays.asList(output), modelFile, true, netStyle));
+        return runThread(thread);
+    }
+
+    @RequestMapping(value = "/stop", method = RequestMethod.GET)
+    public String classify(long threadId) {
+        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+            if (thread.getId() == threadId) {
+                try {
+                    thread.stop();
+                    return "thread stop success...";
+                } catch (Exception e) {
+                    return "thread stop failure " + e.getMessage();
+                }
+            }
+        }
+        return "thread not exists..";
+    }
+
+
+    private List<Pair<Integer, String>> parseHiddens(String hidden) {
         List<Pair<Integer, String>> hiddens = new ArrayList<>();
         for (String h : hidden.split(",")) {
             Pair<Integer, String> pair = new Pair<>();
@@ -112,33 +170,12 @@ public class TrainController {
                 hiddens.add(pair);
             }
         }
-        regressionStock.setSeed(seed);
-        Thread regressionThread = new Thread(() -> regressionStock.train(trainFile, hiddens, learningRate, nEpochs, dayNum, columns, out, modelUpdate, isClassify, netTyle));
-        regressionThread.start();
-        return regressionThread.getId();
+        return hiddens;
     }
 
-    @RequestMapping(value = "/stop", method = RequestMethod.GET)
-    public String classify(long threadId) {
-        for (Thread thread : Thread.getAllStackTraces().keySet()) {
-            if (thread.getId() == threadId) {
-                try {
-                    thread.stop();
-                    return "thread stop success...";
-                } catch (Exception e) {
-                    return "thread stop failure " + e.getMessage();
-                }
-            }
-        }
-        return "thread not exists..";
+    private Long runThread(Thread thread) {
+        thread.run();
+        return thread.getId();
     }
-
-
-//    @RequestMapping(value = "/classify", method = RequestMethod.GET)
-//    public List<Pair<String, Double>> classify(String test) {
-//        return commentClassifier.classify(test, Arrays.asList("up", "down"));
-//
-//    }
-
 
 }
